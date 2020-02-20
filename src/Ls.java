@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.attribute.UserPrincipal;
 import java.text.SimpleDateFormat;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -10,145 +11,90 @@ import java.util.*;
 
 public class Ls {
     public static void main(String[] args) throws IOException {
-        //カレントディレクトリのみで考える
-        String path = System.getProperty("user.dir");
-        File dir = new File(path);
-        File[] files = dir.listFiles();
-        File[] hiddenFiles;
-
-//        hiddenFiles = files.isHidden();
         // 配列のままだと0番目と1番めを同時に見ることができないため、Listに変える
         List<String> argsLists = new ArrayList<>();
         Collections.addAll(argsLists, args);
 
+        String path = null;
+        String options = null;
+
         if (!argsLists.isEmpty()) {
             for (int i = 0; i < argsLists.size(); i++) {
                 if (argsLists.get(i).contains("/")) {
-                    System.out.println("ぜったいぱす");
-                    // ぜったいぱすを取得する
-                    File absolutePath = new File(args[i]);
-//                } else if (argsLists.get(i).contains("-")) {
-//                    System.out.println("おぷしょん" + argsLists.get(i));
-//                    //おぷしょんをりすとにいれる
-//                    List<String> options = new ArrayList<>();
-//                    Collections.addAll(options, argsLists.get(i));
-//                    System.out.println("options =" + options.toString());
+                    // 絶対パスを取得する
+                    path = args[i];
+                } else if (argsLists.get(i).contains("-")) {
+                    options = argsLists.get(i);
                 }
             }
-        } else {
-            // そうたいぱすをしゅとくする
-            System.out.println("そうたいぱす");
-            String relativePath = System.getProperty("user.dir");
+        }
+        // 絶対パスが入っていないので、相対パスを取得する
+        if (path == null) {
+            // 相対パスを取得する
+            path = System.getProperty("user.dir");
         }
 
+        // pathをファイルの中、配列の中に入れる
+        File file = new File(path);
+        File[] files = file.listFiles();
 
-        if (args.length == 0) {                                                                 // パスなし、オプションなし
-            for (int i = 0; i < files.length; i++) {
-                System.out.print(files[i].getName() + " ");
+        // 何のオプションかを判別する
+        if (options != null) {
+            if (options.contains("-") && options.contains("l")) {
+                System.out.println("オプションl");
+                String[] optionlFiles = makeOptionlFiles(files);
+                // 他のオプションにも対応できるように、fileのみを作る
             }
-            System.out.println();
-        }
-        // パスなし、オプションなし以外
+            if (options.contains("-") && options.contains("a")) {
 
-
-
-        for (String p : argsLists) {
-            if (p.contains("/")) { // パスあり
-                File abDir = new File(args[0]);
-                File[] abFiles = abDir.listFiles();
-            for (String p2 : argsLists) {
-                if (p.contains("-") && p.contains("l")) { //　パスあり、オプションあり
-                    System.out.println("ll");
-                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MMM dd HH:mm");
-                    for (int i = 0; i < abFiles.length; i++) {
-                        // ファイルの種類
-                        if (abFiles[i].isFile()) {
-                            System.out.print("-");
-                        } else if (abFiles[i].isDirectory()) {
-                            System.out.print("d");
-                        } else {
-                            System.out.print("l");
-                        }
-                        Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(abFiles[i].toPath());
-                        System.out.print(PosixFilePermissions.toString(permissions) + " ");
-
-                        // ハードリンク数
-                        if (abFiles[i].isDirectory()) {
-                            System.out.print(String.format("%3s", abFiles[i].list().length + 2 + " "));
-                        } else {
-                            System.out.print(String.format("%3s", "1" + " "));
-                        }
-
-                        // 所有者と所有グループ
-                        System.out.print(Files.getOwner(abFiles[i].toPath()) + " ");
-                        System.out.print(Files.getFileAttributeView(abFiles[i].toPath(), PosixFileAttributeView.class).readAttributes().group().getName() + " ");
-
-                        // ファイルサイズ
-                        System.out.print(String.format("%5s", abFiles[i].length()) + " ");
-
-                        // タイムスタンプ
-                        System.out.print(simpleDateFormat.format(abFiles[i].lastModified()) + " ");
-
-                        // ファイル名
-                        System.out.print(abFiles[i].getName() + " ");
-
-                        System.out.println();
-                    }
-                } else { // パスあり、オプションなし
-                    System.out.println("s");
-                    for (int i = 0; i < abFiles.length; i++) {
-                        System.out.print(abFiles[i].getName() + " ");
-                    }
-                    System.out.println();
-                }
             }
-            } else {
-                // パスなし、オプションあり
-                if (p.contains("-") && p.contains("l")) {
-                    System.out.println("aa");
-                    // オプションがあるとき
-                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MMM dd HH:mm");
-                    for (int i = 0; i < files.length; i++) {
-                        // ファイルの種類
-                        if (files[i].isFile()) {
-                            System.out.print("-");
-                        } else if (files[i].isDirectory()) {
-                            System.out.print("d");
-                        } else {
-                            System.out.print("l");
-                        }
-                        Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(files[i].toPath());
-                        System.out.print(PosixFilePermissions.toString(permissions) + " ");
+            if (options.contains("-") && options.contains("t")) {
 
-                        // ハードリンク数
-                        if (files[i].isDirectory()) {
-                            System.out.print(String.format("%3s", files[i].list().length + 2 + " "));
-                        } else {
-                            System.out.print(String.format("%3s", "1" + " "));
-                        }
-
-                        // 所有者と所有グループ
-                        System.out.print(Files.getOwner(files[i].toPath()) + " ");
-                        System.out.print(Files.getFileAttributeView(files[i].toPath(), PosixFileAttributeView.class).readAttributes().group().getName() + " ");
-
-                        // ファイルサイズ
-                        System.out.print(String.format("%5s", files[i].length()) + " ");
-
-                        // タイムスタンプ
-                        System.out.print(simpleDateFormat.format(files[i].lastModified()) + " ");
-
-                        // ファイル名
-                        System.out.print(files[i].getName() + " ");
-
-                        System.out.println();
-                    }
-                }
-                if (p.contains("-") && p.contains("a")) {
-
-                }
+            }
+            if (options.contains("-") && options.contains("r")) {
 
             }
         }
+        //　表示する
 
     }
+
+    // コマンドl
+    public static String[] makeOptionlFiles(File[] files) throws IOException {
+        String[] optionLFiles = new String[files.length];
+        for (int i = 0; i < files.length; i++) {
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MMM dd HH:mm");
+            // ファイルの種類
+            Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(files[i].toPath());
+            String type = PosixFilePermissions.toString(permissions);
+
+            // ハードリンク数
+            String link = null;
+            if (files[i].isDirectory()) {
+                link = String.format("%3s", files[i].list().length + 2 + " ");
+            } else {
+                link = String.format("%3s", "1" + " ");
+            }
+
+            // 所有者
+            UserPrincipal owner = Files.getOwner(files[i].toPath());
+
+            // 所有グループ
+            String group = Files.getFileAttributeView(files[i].toPath(), PosixFileAttributeView.class).readAttributes().group().getName();
+
+            // ファイルサイズ
+            String size = String.format("%5s", files[i].length());
+
+            // タイムスタンプ
+            String time = simpleDateFormat.format(files[i].lastModified());
+
+            // ファイル名
+            String name = files[i].getName();
+
+            optionLFiles[i] = type + link + owner + " " + group + size + time + " " + name;
+            System.out.println(optionLFiles[i]);
+        }
+        return optionLFiles;
+    }
 }
+
