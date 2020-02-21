@@ -1,5 +1,4 @@
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.attribute.UserPrincipal;
@@ -8,6 +7,7 @@ import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.*;
+import java.util.List;
 
 public class Ls {
     public static void main(String[] args) throws IOException {
@@ -37,12 +37,12 @@ public class Ls {
         // pathをファイルの中、配列の中に入れる
         File file = new File(path);
         File[] files = file.listFiles();
+        String[] viewFiles = makeNoOptionFiles(files);
 
         // 何のオプションかを判別する
         if (options != null) {
             if (options.contains("-") && options.contains("l")) {
-                System.out.println("オプションl");
-                String[] optionlFiles = makeOptionlFiles(files);
+                viewFiles = makeOptionLFiles(files);
                 // 他のオプションにも対応できるように、fileのみを作る
             }
             if (options.contains("-") && options.contains("a")) {
@@ -52,22 +52,22 @@ public class Ls {
 
             }
             if (options.contains("-") && options.contains("r")) {
-
+                viewFiles = makeOptionRFiles(viewFiles);
             }
         }
-        //　表示する
 
+        //　表示する
+        viewAllFiles(viewFiles);
     }
 
-    // コマンドl
-    public static String[] makeOptionlFiles(File[] files) throws IOException {
+    // オプションl
+    public static String[] makeOptionLFiles(File[] files) throws IOException {
         String[] optionLFiles = new String[files.length];
         for (int i = 0; i < files.length; i++) {
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MMM dd HH:mm");
             // ファイルの種類
             Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(files[i].toPath());
             String type = PosixFilePermissions.toString(permissions);
-
             // ハードリンク数
             String link = null;
             if (files[i].isDirectory()) {
@@ -92,9 +92,41 @@ public class Ls {
             String name = files[i].getName();
 
             optionLFiles[i] = type + link + owner + " " + group + size + time + " " + name;
-            System.out.println(optionLFiles[i]);
         }
         return optionLFiles;
+    }
+
+    public static String[] makeNoOptionFiles(File[] files) {
+        String[] noOptionLFiles = new String[files.length];
+        for (int i = 0; i < files.length; i++) {
+            String fileName = files[i].getName();
+            noOptionLFiles[i] = fileName + " ";
+        }
+        return noOptionLFiles;
+    }
+
+    public static void viewAllFiles(String[] viewFiles) {
+        for (int i = 0; i < viewFiles.length; i++) {
+            System.out.println(viewFiles[i]);
+        }
+    }
+
+    public static String[] makeOptionRFiles(String[] viewFiles) {
+        String[] optionRFiles = new String[viewFiles.length];
+
+        List<String> toList = new ArrayList<>(viewFiles.length);
+
+        for (int i = 0; i < viewFiles.length; i++) {
+            toList.add(viewFiles[i]);
+        }
+
+        Collections.reverse(toList);
+
+        for (int i = 0; i < viewFiles.length; i++) {
+            optionRFiles[i] = toList.get(i);
+        }
+
+        return optionRFiles;
     }
 }
 
